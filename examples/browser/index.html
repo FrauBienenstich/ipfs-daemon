@@ -2,7 +2,8 @@
   <head>
     <meta charset="utf-8">
 
-    <script type="text/javascript" src="lib/ipfs-browser-daemon.min.js" charset="utf-8"></script>
+    <script type="text/javascript" src="lib/ipfs-browser-daemon.js" charset="utf-8"></script>
+    <script type="text/javascript" src="https://wzrd.in/standalone/buffer" charset="utf-8"></script>
 
     <style>
       @font-face {
@@ -53,6 +54,19 @@
       <div id="output" class="output">🔌 IPFS daemon stopped</div>
       <div id="details" style="display: none;"></div>
       <div id="peers" style="display: none;"></div>
+      <div id="text-field" style="display: none;">
+        <label for="string">Example Text</label>
+        <input id="string" type="text" placeholder="Your example text">
+        <button id="add" type="button">Add to IPFS</button>
+      </div>
+      <div id="hash-output" style="display: none;"></div>
+      <div id="hash-field" style="display: none;">
+        <label for="hash">Hash</label>
+        <input id="hash" type="text" placeholder="Your IPFS Hash">
+        <button id="get" type="button">Get from IPFS</button>
+      </div>
+      <div id="text-output" style="display: none;"></div>
+
       <div id="errors" style="display: none;"></div>
     </div>
 
@@ -65,8 +79,38 @@
       const errors = document.getElementById("errors")
       const portInput = document.getElementById("port")
       const dirInput = document.getElementById("dir")
+      const textField = document.getElementById("text-field")
+      const addButton = document.getElementById("add")
+      const stringInput = document.getElementById("string")
+      const hash = document.getElementById("hash")
+      const getButton = document.getElementById("get")
+      const hashField = document.getElementById("hash-field")
+      const hashOutput = document.getElementById("hash-output")
+      const textOutput = document.getElementById("text-output")
 
       let ipfs, pollPeersInterval
+
+      let add = () => {
+        ipfs.object.put({ Data: stringInput.value, Links: []}, (err, node) => {
+          console.log(err)
+          node.toJSON((err, json) => {
+            hashOutput.innerHTML = json.Hash
+            hashOutput.removeAttribute("style")
+            hashField.removeAttribute("style")
+          })
+        })
+      }
+
+      let get = () => {
+        ipfs.object.get(hash.value, { enc: 'base58' })
+        .then((node) => {
+          node.toJSON((err, json) => {
+            console.log(json.Data.toString())
+            textOutput.innerHTML = json.Data.toString()
+            textOutput.removeAttribute("style")
+          })
+        })
+      }
 
       const start = () => {
         if (!ipfs) {
@@ -105,6 +149,10 @@
                 peers.innerHTML =  "<br/>Peers:<br/>" + peerAsHtml
               })
             }, 1000)
+
+            textField.removeAttribute("style")
+
+
           })
 
           ipfs.on('error', (e) => {
@@ -129,6 +177,9 @@
 
       startButton.addEventListener('click', start)
       stopButton.addEventListener('click', stop)
+      addButton.addEventListener('click', add)
+      getButton.addEventListener('click', get)
+
       
       errors.addEventListener('click', () => {
         errors.innerHTML = ""
